@@ -86,10 +86,10 @@ def createCSV():
         
 
 
-# file = open('ubiris/Sessao_1/84/1.pkl', 'rb')
+# file = open('ubiris/Sessao_1/5/1.pkl', 'rb')
 # x = pickle.load(file)
 # file.close()
-# file = open('ubiris/Sessao_1/84/3.pkl', 'rb')
+# file = open('ubiris/Sessao_1/5/4.pkl', 'rb')
 # y = pickle.load(file)
 # file.close()
 
@@ -98,5 +98,6 @@ def createCSV():
 
 # print(value, bo)
 # createCSV()
-
-enroll_all()
+# print(verify(x.template, y.template))
+delete_all()
+# enroll_all()

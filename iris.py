@@ -34,24 +34,29 @@ class Iris:
             edge = cv2.Canny(img_blur, 25, 50)
 
             #************ Finding Pupil **************#
+            img1 = img.copy()
             edge_crop = edge[120:350,100:350] # for better results in finding pupil
-            circle1 = cv2.HoughCircles(edge_crop, cv2.HOUGH_GRADIENT, 2, 200,param1=250, param2=20,minRadius=30, maxRadius=60)
+            circle1 = cv2.HoughCircles(edge_crop, method = cv2.HOUGH_GRADIENT, dp = 1, minDist=400,param1=250, param2=3,minRadius=30, maxRadius=60)
             if circle1 is not None:
                     circles = np.uint16(np.around(circle1))
                     for i in circles[0, :]:
                         center1 = (i[0]+100, i[1]+120)
                         radius1 = i[2]
+            cv2.circle(img1, center1, radius1, (255, 0, 255), 1)
 
             #************ Finding Iris **************#
-            circle2 = cv2.HoughCircles(edge, cv2.HOUGH_GRADIENT, 1, 400,param1=200, param2=18,minRadius=130, maxRadius=200)
+            circle2 = cv2.HoughCircles(edge, method=cv2.HOUGH_GRADIENT, dp=1, minDist=400, param1=200, param2=3,minRadius=130, maxRadius=200)
             if circle2 is not None:
                     circles = np.uint16(np.around(circle2))
                     for i in circles[0, :]:
                         center2 = (i[0], i[1])
                         radius2 = i[2]
+            cv2.circle(img1, center2, radius2, (255, 0, 255), 1)
+            title = str(self.id) + "/" + str(self.probeID)
+            cv2.imshow(title, img1)
+            cv2.waitKey(0)
             
             #************ Normalization **************#
-            rad2 = radius1 + 140 # Taken distance (140px)
             angle = np.arange(0, 2*np.pi, 2*np.pi/360) 
             # Coordinates of the starting point (pupil center)
             x = center1[0]
@@ -62,10 +67,10 @@ class Iris:
             for alpha in angle:
                 values = []
                 # Calculating the beginning and the end point coordinates
-                a = int(radius1*np.cos(alpha))
-                b = int(radius1*np.sin(alpha))
-                c = int(rad2 * np.cos(alpha))
-                d = int(rad2 * np.sin(alpha))
+                a = int(radius1 * np.cos(alpha))
+                b = int(radius1 * np.sin(alpha))
+                c = int(radius2 * np.cos(alpha))
+                d = int(radius2 * np.sin(alpha))
                 # The beginning
                 x1 = x + a
                 y1 = y + b
@@ -115,10 +120,16 @@ class Iris:
                             # K12
                             y1 += ky
                             e += dx
-                            values.append(img[y1,x1])       
-                norm[j] = np.array(values[:100])
+                            values.append(img[y1,x1])
+
+                i = np.linspace(0,len(values)-20, 100, dtype=int)
+                new_val =[]
+                for h in i:
+                    new_val.append(values[h])
+                norm[j] = np.array(new_val)
                 j += 1
             norm = np.transpose(np.array(norm))
+
 
             #************ LL subband **************#
             coeffs = pywt.dwt2(norm, 'haar')
@@ -152,6 +163,14 @@ class Iris:
                     else:
                         binary[i][j] = 0
             self.template = binary
+            binary_img= np.zeros((25,90))
+            for i in range(25):
+                for j in range(90):
+                    if binary[i][j] == 0:
+                        binary_img[i][j] = 0
+                    else:
+                        binary_img[i][j] = 255
+
             self.fail = 'no'
         except:
             print("Fail to enroll")
@@ -173,9 +192,9 @@ class Iris:
 
 # test
 
-# path = 'ubiris/Sessao_1/1/Img_1_1_1.jpg'
-# heh = Iris(path)
-# heh.generateTemplate()
+path = 'ubiris/Sessao_1/1/Img_1_1_1.jpg'
+heh = Iris(path)
+heh.generateTemplate()
 # heh.getID()
 # heh.save()
 # file = open('ubiris/Sessao_1/1/1.pkl', 'rb')
