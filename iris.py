@@ -52,9 +52,9 @@ class Iris:
                         center2 = (i[0], i[1])
                         radius2 = i[2]
             cv2.circle(img1, center2, radius2, (255, 0, 255), 1)
-            title = str(self.id) + "/" + str(self.probeID)
-            cv2.imshow(title, img1)
-            cv2.waitKey(0)
+            # title = str(self.id) + "/" + str(self.probeID)
+            # cv2.imshow(title, img1)
+            # cv2.waitKey(0)
             
             #************ Normalization **************#
             angle = np.arange(0, 2*np.pi, 2*np.pi/360) 
