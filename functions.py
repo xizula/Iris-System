@@ -72,7 +72,7 @@ def createCSV(threshold):
                         writer.writerow(["`" +enrolled.id + "/" + enrolled.probeID,"'" + ver.id + "/" + ver.probeID, res, 0, value])
 
 
-def count_FAR(file_path):
+def count_FAR_FRR(file_path):
     file = pd.read_csv(file_path)
     FP = len(file[(file["Passed?"] == 1) & (file["Should?"] == 0)]) # False Positive
     FN = len(file[(file["Passed?"] == 0) & (file["Should?"] == 1)]) # False Negative
@@ -82,21 +82,52 @@ def count_FAR(file_path):
     FRR = FN/(FN+TP)
     return FAR, FRR
            
+def save_rates(fars, frrs):
+    file = open('fars.pkl', 'wb')
+    pickle.dump(fars, file)
+    file.close()
+    file = open('frrs.pkl', 'wb')
+    pickle.dump(frrs, file)
+    file.close()
 
-fars = []
-frrs = []
-thres = np.linspace(0.01, 0.99, 99)
-for t in thres:
-    createCSV(t)
-    FAR, FRR = count_FAR('results.csv')
-    fars.append(FAR)
-    frrs.append(FRR)
-plt.figure(figsize=[15,8])
-plt.plot(thres, fars, color='red', label ='FAR')
-plt.plot(thres, frrs, color='blue', label = 'FRR')
-plt.xlabel("Threshold")
-plt.ylabel("Error value")
-plt.title("FAR and FRR")
-plt.legend()
-plt.show()
+def create_plots(load: bool, save: bool): # load -> True (from file), False (new); save -> True (save values to file), False (don't save)
+    if not ((isinstance(load, bool) and isinstance(save, bool)) or (load in (0, 1)) and (save in (0, 1))):
+         raise ValueError("Input variables must be boolean (True/False) or 0/1")
+    thres = np.linspace(0.01, 0.99, 99)
+    if load == True:
+        file = open('fars.pkl', 'rb')
+        fars = pickle.load(file)
+        file.close()
+        file = open('frrs.pkl', 'rb')
+        frrs = pickle.load(file)
+        file.close()    
+    else:    
+        fars = []
+        frrs = []
+        for t in thres:
+            createCSV(t)
+            FAR, FRR = count_FAR_FRR('results.csv')
+            fars.append(FAR)
+            frrs.append(FRR)
+        if save == True:
+            save_rates(fars, frrs)
+    plt.figure(figsize=[15,8])
+    plt.plot(thres, fars, color='red', label ='FAR')
+    plt.plot(thres, frrs, color='blue', label = 'FRR')
+    plt.xlabel("Threshold")
+    plt.ylabel("Error value")
+    plt.title("FAR and FRR")
+    plt.legend()
+    plt.show()
+    plt.figure(figsize=[15,8])
+    plt.plot(frrs, fars, color='green')
+    # plt.xscale('log')
+    plt.xlabel("FRR")
+    plt.ylabel("FAR")
+    plt.title("FAR(FRR)")
+    plt.show()
+
+create_plots(0, False)
+
+
 
