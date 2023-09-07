@@ -204,14 +204,3 @@ class Iris:
         pass
     def generateBiohash(self):
         pass
-
-# test
-
-# path = 'ubiris/Sessao_1/1/Img_1_1_1.jpg'
-# heh = Iris(path)
-# heh.generateTemplate()
-# heh.getID()
-# heh.save()
-file = open('ubiris/Sessao_1/1/1.pkl', 'rb')
-xd = pickle.load(file)
-xd.show_template()
