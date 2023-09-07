@@ -127,7 +127,7 @@ def create_plots(load: bool, save: bool): # load -> True (from file), False (new
     plt.title("FAR(FRR)")
     plt.show()
 
-create_plots(0, False)
+create_plots(True, False)
 
 
 

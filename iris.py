@@ -184,6 +184,21 @@ class Iris:
         file = open(self.filename, 'wb')
         pickle.dump(self, file)
         file.close()
+
+    def show_template(self):
+        binary_img= np.zeros((25,90))
+        for i in range(25):
+            for j in range(90):
+                if self.template[i][j] == 0:
+                    binary_img[i][j] = 0
+                else:
+                    binary_img[i][j] = 255
+        cv2.namedWindow("Template", cv2.WINDOW_NORMAL)
+        cv2.resizeWindow("Template", 700, 200)           
+        cv2.imshow("Template", binary_img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
    
     def generateBloom(self):
         pass
@@ -192,11 +207,11 @@ class Iris:
 
 # test
 
-path = 'ubiris/Sessao_1/1/Img_1_1_1.jpg'
-heh = Iris(path)
-heh.generateTemplate()
+# path = 'ubiris/Sessao_1/1/Img_1_1_1.jpg'
+# heh = Iris(path)
+# heh.generateTemplate()
 # heh.getID()
 # heh.save()
-# file = open('ubiris/Sessao_1/1/1.pkl', 'rb')
-# xd = pickle.load(file)
-# print(xd.filename, xd.id, xd.probeID, xd.template)
+file = open('ubiris/Sessao_1/1/1.pkl', 'rb')
+xd = pickle.load(file)
+xd.show_template()
