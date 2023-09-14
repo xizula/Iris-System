@@ -127,6 +127,15 @@ def create_plots(load: bool, save: bool): # load -> True (from file), False (new
     plt.title("FAR(FRR)")
     plt.show()
 
+img = Iris('img.jpg')
+img.generateTemplate()
+img.show_template()
+
+edit = Iris('edit.jpg')
+edit.generateTemplate()
+edit.show_template()
+
+print(verify(img.template, edit.template, 0.3))
 
 
 
