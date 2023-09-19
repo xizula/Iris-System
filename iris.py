@@ -4,14 +4,19 @@ import pywt
 from patchify import patchify
 from scipy.linalg import svd
 import pickle
+from ff3 import FF3Cipher
+import secrets
+from passlib.utils.pbkdf2 import pbkdf2
+import pandas as pd
+import csv
  
 part_path = 'ubiris/Sessao_1/'
 fte = 0 
+key = "b09b18e4a298c513ad6236def0f6df7d" # secrets.token_hex(16)
 class Iris:
     def __init__(self, path):
         self.path = path
-        self.probeID = self.path[-5]
-        # self.tweak = 
+        self.probeID = self.path[-5] 
     
     def getID(self):
         if self.path[18] == "/":
@@ -20,7 +25,17 @@ class Iris:
             self.id = self.path[16] + self.path[17] + self.path[18]
         else:
             self.id = self.path[16]
-
+    
+    def getTweak(self):
+        tweaks = pd.read_csv('tweaks.csv')
+        if (tweaks['ID'].eq(int(self.id)).any() == True):
+            self.tweak = tweaks.set_index('ID').loc[int(self.id), 'tweaks']
+        else:
+            with open('tweaks.csv', 'a', newline='') as file:
+                writer = csv.writer(file)
+                self.tweak = str(secrets.token_hex(7))
+                writer.writerow([self.id, self.tweak])
+       
 
     def generateTemplate(self):
         
@@ -163,13 +178,7 @@ class Iris:
                     else:
                         binary[i][j] = 0
             self.template = binary
-            binary_img= np.zeros((25,90))
-            for i in range(25):
-                for j in range(90):
-                    if binary[i][j] == 0:
-                        binary_img[i][j] = 0
-                    else:
-                        binary_img[i][j] = 255
+
 
             self.fail = 'no'
         except:
@@ -201,6 +210,34 @@ class Iris:
 
    
     def generateBloom(self):
-        pass
+        c = FF3Cipher.withCustomAlphabet(key, self.tweak, "01")
+        t = np.transpose(self.template)
+        fpe = np.zeros(t.shape)
+        for i in range(t.shape[0]):
+            col = ''
+            for j in t[i]:
+                col += str(int(j))
+            cipher = c.encrypt(col)
+            cipher = np.array(list(cipher), dtype=int)
+            fpe[i] = cipher
+        fpe = np.transpose(fpe)
+        # cutting into blocks (5x10)
+        h, w = fpe.shape
+        blocks = (fpe.reshape(h//5, 5, -1, 10)
+                .swapaxes(1,2)
+                .reshape(-1, 5, 10))
+        bloom_filter = np.zeros((blocks.shape[0], 2**5), dtype=int)
+        for i in range(blocks.shape[0]):
+            block = np.transpose(blocks[i])
+            for row in block:
+                row = [int(x) for x in row.tolist()]
+                row = ''.join(map(str, row))
+                dec = int(row, 2)
+                bloom_filter[i][dec] = 1
+        self.bloom = bloom_filter
+
     def generateBiohash(self):
         pass
+
+
+
