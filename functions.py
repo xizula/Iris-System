@@ -52,13 +52,13 @@ def verify(temp1, temp2, threshold):
 
 def verifyBloom(temp1, temp2, threshold):
     value = 0
-    for i in range(45):
+    for i in range(18):
         v = np.logical_xor(temp1[i], temp2[i])
         o1 = np.count_nonzero(temp1[i])
         o2 = np.count_nonzero(temp2[i])
         ham = np.count_nonzero(v)
         value += ham/(o1+o2)
-    value = value/45
+    value = value/18
     if value <= threshold:
         return value, 1
     else:
@@ -211,7 +211,7 @@ def create_plots_bloom(load: bool, save: bool): # load -> True (from file), Fals
     plt.plot(thres, frrs, color='blue', label = 'FRR')
     plt.xlabel("Threshold")
     plt.ylabel("Error value")
-    plt.title("FAR and FRR")
+    plt.title("FAR and FRR (Bloom)")
     plt.legend()
     plt.show()
     plt.figure(figsize=[15,8])
@@ -219,21 +219,26 @@ def create_plots_bloom(load: bool, save: bool): # load -> True (from file), Fals
     # plt.xscale('log')
     plt.xlabel("FRR")
     plt.ylabel("FAR")
-    plt.title("FAR(FRR)")
+    plt.title("FAR(FRR) (Bloom)")
     plt.show()
 
 
-img = Iris('img.jpg')
-img.id = 1
-img.generateTemplate()
-img.getTweak()
-img.generateBloom()
 
-edit = Iris('9.jpg')
-edit.id = 1
-edit.generateTemplate()
-edit.getTweak()
-edit.generateBloom()
+# delete_all()
+# enroll_all()
+# create_plots(False, True)
+create_plots_bloom(False, True)
+# img = Iris('img.jpg')
+# img.id = 1
+# img.generateTemplate()
+# img.getTweak()
+# img.generateBloom()
 
-print(verifyBloom(img.bloom, edit.bloom, 0.3))
+# edit = Iris('9.jpg')
+# edit.id = 1
+# edit.generateTemplate()
+# edit.getTweak()
+# edit.generateBloom()
+
+# print(verifyBloom(img.bloom, edit.bloom, 0.3))
 
