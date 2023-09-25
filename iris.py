@@ -9,10 +9,15 @@ import secrets
 from passlib.utils.pbkdf2 import pbkdf2
 import pandas as pd
 import csv
+import sympy
  
 part_path = 'ubiris/Sessao_1/'
 fte = 0 
 key = "b09b18e4a298c513ad6236def0f6df7d" # secrets.token_hex(16)
+p = 205891132094743
+q = 1152921504606847067
+M = p * q
+
 class Iris:
     def __init__(self, path):
         self.path = path
@@ -36,9 +41,18 @@ class Iris:
                 self.tweak = str(secrets.token_hex(7))
                 writer.writerow([self.id, self.tweak])
        
+    def getHashKey(self):
+        hk = pd.read_csv('hashkeys.csv')
+        if (hk['ID'].eq(int(self.id)).any() == True):
+            self.hashkey = hk.set_index('ID').loc[int(self.id), 'hashkey']
+        else:
+            with open('hashkeys.csv', 'a', newline='') as file:
+                writer = csv.writer(file)
+                self.hashkey = int(secrets.token_hex(16), 16)
+                writer.writerow([self.id, self.hashkey])
 
-    def generateTemplate(self):
-        
+
+    def generateTemplate(self):       
         try:
             #************ Image preparation **************#
             img = cv2.imread(self.path, 0)
@@ -236,7 +250,54 @@ class Iris:
         self.bloom = bloom_filter
 
     def generateBiohash(self):
-        pass
+        # Fature vector 
+        features = []
+        for i in range(25):
+            for j in range(90):
+                features.append(int(self.template[i][j]))
+        n = len(features)
+        m = 2000
 
+        # Blum Blum Shub
+        bbs = np.zeros((m,n))
+        val = int(self.hashkey)
+        for i in range(m):
+            for j in range(n):              
+                val = (val*val) % M
+                bit = val & 1
+                bbs[i][j] = bit
+        bbs = np.array(bbs)
 
+        # Gram-Schmidt
+        gs = np.zeros((m,n))
+        v1 = bbs[0]
+        u1 = v1/np.sqrt(sum(pow(elem,2) for elem in v1))
+        gs[0] = u1
+
+        y2 = bbs[1] - (u1.dot(bbs[1])*u1)
+        u2 = y2/np.sqrt(sum(pow(elem,2) for elem in y2))
+        gs[1] = u2
+
+        for i in range(2, m):
+            y = 0
+            for j in range(i):
+                y += gs[j].dot(bbs[i])*gs[j]
+            y = bbs[i] - y
+            u = y/np.sqrt(sum(pow(elem,2) for elem in y))
+            gs[i] = u
+
+        # Inner product
+        inner = []
+        for vector in gs:
+            inner.append(vector.dot(features))
+
+        # Generating BioHashing Code
+        avg = np.mean(inner)
+        b = []
+        for elem in inner:
+            if elem <= avg:
+                b.append(0)
+            else:
+                b.append(1)       
+        self.biohash = b
 

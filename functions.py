@@ -20,10 +20,12 @@ def enroll(path):
         obj = Iris(path)
         obj.getID()
         obj.generateTemplate()
-        obj.getTweak()
-        obj.generateBloom()
+        # obj.getTweak()
+        # obj.generateBloom()
+        obj.getHashKey()
+        obj.generateBiohash()
     except:
-        print("fte")
+        print(f"fte {obj.id} {obj.probeID}")
     if obj.fail =='no':
         obj.save()
 
@@ -59,6 +61,15 @@ def verifyBloom(temp1, temp2, threshold):
         value += ham/(o1+o2)
     value = value/30
     
+    if value <= threshold:
+        return value, 1
+    else:
+        return value, 0
+    
+def verifyBiohash(temp1, temp2, threshold):
+    v = np.logical_xor(temp1,temp2)
+    ham = np.count_nonzero(v)
+    value = ham / len(temp1)
     if value <= threshold:
         return value, 1
     else:
@@ -223,22 +234,83 @@ def create_plots_bloom(load: bool, save: bool): # load -> True (from file), Fals
     plt.show()
 
 
-# createCSV_bloom(0.3)
+def createCSV_biohash(threshold):
+    with open('results_biohash.csv', 'w', newline='') as file:
+        writer = csv.writer(file)
+        field = ["Probe 1", "Probe 2", "Passed?", "Should?", "Hamming"]
+        writer.writerow(field)
+        folder = Path("ubiris/Sessao_1")
+        subfolders = [subfolder for subfolder in folder.iterdir() if subfolder.is_dir()]
+        for dir in subfolders:
+            path = Path(dir)
+            files = list(path.glob('*.pkl'))
+            probe = open(files[0], 'rb')
+            enrolled = pickle.load(probe)
+            probe.close()
+            for i in subfolders:
+                path = Path(i)
+                files = list(path.glob('*.pkl'))
+                for file in files:
+                    probe = open(file.as_posix(), 'rb')
+                    ver = pickle.load(probe)
+                    probe.close()
+                    if ver.id == enrolled.id and ver.probeID == enrolled.probeID:
+                        continue
+                    value, res = verifyBiohash(enrolled.biohash, ver.biohash, threshold)
+                    if ver.id == enrolled.id:
+                        writer.writerow(["`" + enrolled.id + "/" + enrolled.probeID, "'" +ver.id + "/" + ver.probeID, res, 1, value])
+                    else:
+                        writer.writerow(["`" +enrolled.id + "/" + enrolled.probeID,"'" + ver.id + "/" + ver.probeID, res, 0, value])
+
+
+           
+def save_rates_biohash(fars, frrs):
+    file = open('fars_biohash.pkl', 'wb')
+    pickle.dump(fars, file)
+    file.close()
+    file = open('frrs_biohash.pkl', 'wb')
+    pickle.dump(frrs, file)
+    file.close()
+
+def create_plots_biohash(load: bool, save: bool): # load -> True (from file), False (new); save -> True (save values to file), False (don't save)
+    if not ((isinstance(load, bool) and isinstance(save, bool)) or (load in (0, 1)) and (save in (0, 1))):
+         raise ValueError("Input variables must be boolean (True/False) or 0/1")
+    thres = np.linspace(0.01, 0.99, 99)
+    if load == True:
+        file = open('fars_biohash.pkl', 'rb')
+        fars = pickle.load(file)
+        file.close()
+        file = open('frrs_biohash.pkl', 'rb')
+        frrs = pickle.load(file)
+        file.close()    
+    else:    
+        fars = []
+        frrs = []
+        for t in thres:
+            createCSV_biohash(t)
+            FAR, FRR = count_FAR_FRR('results_biohash.csv')
+            fars.append(FAR)
+            frrs.append(FRR)
+        if save == True:
+            save_rates_biohash(fars, frrs)
+    plt.figure(figsize=[15,8])
+    plt.plot(thres, fars, color='red', label ='FAR')
+    plt.plot(thres, frrs, color='blue', label = 'FRR')
+    plt.xlabel("Threshold")
+    plt.ylabel("Error value")
+    plt.title("FAR and FRR")
+    plt.legend()
+    plt.show()
+    plt.figure(figsize=[15,8])
+    plt.plot(frrs, fars, color='green')
+    # plt.xscale('log')
+    plt.xlabel("FRR")
+    plt.ylabel("FAR")
+    plt.title("FAR(FRR)")
+    plt.show()
+
+
 # delete_all()
 # enroll_all()
-# create_plots(False, True)
-create_plots_bloom(True, False)
-# img = Iris('img.jpg')
-# img.id = 1
-# img.generateTemplate()
-# img.getTweak()
-# img.generateBloom()
-
-# edit = Iris('9.jpg')
-# edit.id = 1
-# edit.generateTemplate()
-# edit.getTweak()
-# edit.generateBloom()
-
-# print(verifyBloom(img.bloom, edit.bloom, 0.3))
-
+# enroll("ubiris/Sessao_1/1/Img_1_1_1.jpg") 
+create_plots_biohash(False, True)
