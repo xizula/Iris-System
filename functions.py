@@ -21,7 +21,6 @@ def enroll(path):
         obj.getID()
         obj.generateTemplate()
         obj.getTweak()
-        print(obj.tweak)
         obj.generateBloom()
     except:
         print("fte")
@@ -52,13 +51,14 @@ def verify(temp1, temp2, threshold):
 
 def verifyBloom(temp1, temp2, threshold):
     value = 0
-    for i in range(18):
+    for i in range(30):
         v = np.logical_xor(temp1[i], temp2[i])
         o1 = np.count_nonzero(temp1[i])
         o2 = np.count_nonzero(temp2[i])
         ham = np.count_nonzero(v)
         value += ham/(o1+o2)
-    value = value/18
+    value = value/30
+    
     if value <= threshold:
         return value, 1
     else:
@@ -188,7 +188,7 @@ def save_rates_bloom(fars, frrs):
 def create_plots_bloom(load: bool, save: bool): # load -> True (from file), False (new); save -> True (save values to file), False (don't save)
     if not ((isinstance(load, bool) and isinstance(save, bool)) or (load in (0, 1)) and (save in (0, 1))):
          raise ValueError("Input variables must be boolean (True/False) or 0/1")
-    thres = np.linspace(0.01, 0.99, 99)
+    thres = np.linspace(0.1, 0.99, 99)
     if load == True:
         file = open('fars_bloom.pkl', 'rb')
         fars = pickle.load(file)
@@ -223,11 +223,11 @@ def create_plots_bloom(load: bool, save: bool): # load -> True (from file), Fals
     plt.show()
 
 
-
+# createCSV_bloom(0.3)
 # delete_all()
 # enroll_all()
 # create_plots(False, True)
-create_plots_bloom(False, True)
+create_plots_bloom(True, False)
 # img = Iris('img.jpg')
 # img.id = 1
 # img.generateTemplate()

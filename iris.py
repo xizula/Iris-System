@@ -76,7 +76,7 @@ class Iris:
             # Coordinates of the starting point (pupil center)
             x = center1[0]
             y = center1[1]
-            norm = np.zeros((360,104))
+            norm = np.zeros((360,100))
             j = 0
             # Iterating every single degree
             for alpha in angle:
@@ -136,7 +136,7 @@ class Iris:
                             y1 += ky
                             e += dx
                             values.append(img[y1,x1])
-                i = np.linspace(0,len(values)-20, 104, dtype=int)
+                i = np.linspace(0,len(values)-20, 100, dtype=int)
                 new_val =[]
                 for h in i:
                     new_val.append(values[h])
@@ -151,7 +151,7 @@ class Iris:
 
             #************ SVD **************#
             patches = patchify(LL,(2,2),step=2)
-            smatrix =np.zeros((26,90))
+            smatrix =np.zeros((25,90))
             for i in range(patches.shape[0]):
                 for j in range(patches.shape[1]):
                     U,s,VT = svd(patches[i][j])
@@ -159,10 +159,10 @@ class Iris:
             smatrix = np.array(smatrix)
 
             #************ Template Generation **************#
-            binary = np.zeros((26,90))
-            for i in range(26):
+            binary = np.zeros((25,90))
+            for i in range(25):
                 for j in range(90):
-                    if j == 89 and i == 25:
+                    if j == 89 and i == 24:
                         binary[i][j] = 1
                         continue
                     if j == 89:
@@ -194,8 +194,8 @@ class Iris:
         file.close()
 
     def show_template(self):
-        binary_img= np.zeros((26,90))
-        for i in range(26):
+        binary_img= np.zeros((25,90))
+        for i in range(25):
             for j in range(90):
                 if self.template[i][j] == 0:
                     binary_img[i][j] = 0
@@ -222,10 +222,10 @@ class Iris:
         fpe = np.transpose(fpe)
         # cutting into blocks (5x10)
         h, w = fpe.shape
-        blocks = (fpe.reshape(h//13, 13, -1, 10)
+        blocks = (fpe.reshape(h//5, 5, -1, 15)
                 .swapaxes(1,2)
-                .reshape(-1, 13, 10))
-        bloom_filter = np.zeros((blocks.shape[0], 2**13), dtype=int)
+                .reshape(-1, 5, 15))
+        bloom_filter = np.zeros((blocks.shape[0], 2**5), dtype=int)
         for i in range(blocks.shape[0]):
             block = np.transpose(blocks[i])
             for row in block:
