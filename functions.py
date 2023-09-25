@@ -188,7 +188,7 @@ def save_rates_bloom(fars, frrs):
 def create_plots_bloom(load: bool, save: bool): # load -> True (from file), False (new); save -> True (save values to file), False (don't save)
     if not ((isinstance(load, bool) and isinstance(save, bool)) or (load in (0, 1)) and (save in (0, 1))):
          raise ValueError("Input variables must be boolean (True/False) or 0/1")
-    thres = np.linspace(0.1, 0.99, 99)
+    thres = np.linspace(0.01, 0.99, 99)
     if load == True:
         file = open('fars_bloom.pkl', 'rb')
         fars = pickle.load(file)
