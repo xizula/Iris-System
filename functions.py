@@ -146,6 +146,8 @@ def create_plots(load: bool, save: bool): # load -> True (from file), False (new
     plt.figure(figsize=[15,8])
     plt.plot(thres, fars, color='red', label ='FAR')
     plt.plot(thres, frrs, color='blue', label = 'FRR')
+    plt.xscale('log')
+    plt.yscale('log')
     plt.xlabel("Threshold")
     plt.ylabel("Error value")
     plt.title("FAR and FRR")
@@ -153,7 +155,8 @@ def create_plots(load: bool, save: bool): # load -> True (from file), False (new
     plt.show()
     plt.figure(figsize=[15,8])
     plt.plot(frrs, fars, color='green')
-    # plt.xscale('log')
+    plt.xscale('log')
+    plt.yscale('log')
     plt.xlabel("FRR")
     plt.ylabel("FAR")
     plt.title("FAR(FRR)")
@@ -220,6 +223,8 @@ def create_plots_bloom(load: bool, save: bool): # load -> True (from file), Fals
     plt.figure(figsize=[15,8])
     plt.plot(thres, fars, color='red', label ='FAR')
     plt.plot(thres, frrs, color='blue', label = 'FRR')
+    plt.xscale('log')
+    plt.yscale('log')
     plt.xlabel("Threshold")
     plt.ylabel("Error value")
     plt.title("FAR and FRR (Bloom)")
@@ -227,7 +232,8 @@ def create_plots_bloom(load: bool, save: bool): # load -> True (from file), Fals
     plt.show()
     plt.figure(figsize=[15,8])
     plt.plot(frrs, fars, color='green')
-    # plt.xscale('log')
+    plt.xscale('log')
+    plt.yscale('log')
     plt.xlabel("FRR")
     plt.ylabel("FAR")
     plt.title("FAR(FRR) (Bloom)")
@@ -296,6 +302,8 @@ def create_plots_biohash(load: bool, save: bool): # load -> True (from file), Fa
     plt.figure(figsize=[15,8])
     plt.plot(thres, fars, color='red', label ='FAR')
     plt.plot(thres, frrs, color='blue', label = 'FRR')
+    plt.xscale('log')
+    plt.yscale('log')
     plt.xlabel("Threshold")
     plt.ylabel("Error value")
     plt.title("FAR and FRR")
@@ -303,14 +311,37 @@ def create_plots_biohash(load: bool, save: bool): # load -> True (from file), Fa
     plt.show()
     plt.figure(figsize=[15,8])
     plt.plot(frrs, fars, color='green')
-    # plt.xscale('log')
+    plt.xscale('log')
+    plt.yscale('log')
     plt.xlabel("FRR")
     plt.ylabel("FAR")
     plt.title("FAR(FRR)")
     plt.show()
 
 
-# delete_all()
-# enroll_all()
-# enroll("ubiris/Sessao_1/1/Img_1_1_1.jpg") 
-create_plots_biohash(False, True)
+def distribution(file):
+    df = pd.read_csv(file)
+    same = []
+    diff = []
+    for i in range(len(df)):
+        id1 = df['Probe 1'][i].index('/')
+        id2 = df['Probe 2'][i].index('/')
+        if id1 != id2:
+            diff.append(df['Hamming'][i])
+        else:
+            if df['Probe 1'][i][1:(id1+1)] == df['Probe 2'][i][1:(id1+1)]:
+                same.append(df['Hamming'][i])
+            else:
+                diff.append(df['Hamming'][i])
+
+    plt.figure(figsize=[15,8])
+    plt.hist(diff, color='#C70039', bins=100, label="Different Probes")
+    plt.hist(same, color='green', bins=20, label ="Same probes")
+    plt.title("Similarity distribution")
+    plt.xlabel("Hamming distance")
+    plt.ylabel("Amount of probes")
+    plt.legend()
+    plt.show()
+
+create_plots_biohash(True, False)
+
