@@ -4,14 +4,24 @@ import pywt
 from patchify import patchify
 from scipy.linalg import svd
 import pickle
+from ff3 import FF3Cipher
+import secrets
+from passlib.utils.pbkdf2 import pbkdf2
+import pandas as pd
+import csv
+import sympy
  
 part_path = 'ubiris/Sessao_1/'
 fte = 0 
+key = "b09b18e4a298c513ad6236def0f6df7d" # secrets.token_hex(16)
+p = 205891132094743
+q = 1152921504606847067
+M = p * q
+
 class Iris:
     def __init__(self, path):
         self.path = path
-        self.probeID = self.path[-5]
-        # self.tweak = 
+        self.probeID = self.path[-5] 
     
     def getID(self):
         if self.path[18] == "/":
@@ -20,10 +30,29 @@ class Iris:
             self.id = self.path[16] + self.path[17] + self.path[18]
         else:
             self.id = self.path[16]
+    
+    def getTweak(self):
+        tweaks = pd.read_csv('tweaks.csv')
+        if (tweaks['ID'].eq(int(self.id)).any() == True):
+            self.tweak = tweaks.set_index('ID').loc[int(self.id), 'tweaks']
+        else:
+            with open('tweaks.csv', 'a', newline='') as file:
+                writer = csv.writer(file)
+                self.tweak = str(secrets.token_hex(7))
+                writer.writerow([self.id, self.tweak])
+       
+    def getHashKey(self):
+        hk = pd.read_csv('hashkeys.csv')
+        if (hk['ID'].eq(int(self.id)).any() == True):
+            self.hashkey = hk.set_index('ID').loc[int(self.id), 'hashkey']
+        else:
+            with open('hashkeys.csv', 'a', newline='') as file:
+                writer = csv.writer(file)
+                self.hashkey = int(secrets.token_hex(16), 16)
+                writer.writerow([self.id, self.hashkey])
 
 
-    def generateTemplate(self):
-        
+    def generateTemplate(self):       
         try:
             #************ Image preparation **************#
             img = cv2.imread(self.path, 0)
@@ -121,7 +150,6 @@ class Iris:
                             y1 += ky
                             e += dx
                             values.append(img[y1,x1])
-
                 i = np.linspace(0,len(values)-20, 100, dtype=int)
                 new_val =[]
                 for h in i:
@@ -163,13 +191,7 @@ class Iris:
                     else:
                         binary[i][j] = 0
             self.template = binary
-            binary_img= np.zeros((25,90))
-            for i in range(25):
-                for j in range(90):
-                    if binary[i][j] == 0:
-                        binary_img[i][j] = 0
-                    else:
-                        binary_img[i][j] = 255
+
 
             self.fail = 'no'
         except:
@@ -201,6 +223,81 @@ class Iris:
 
    
     def generateBloom(self):
-        pass
+        c = FF3Cipher.withCustomAlphabet(key, self.tweak, "01")
+        t = np.transpose(self.template)
+        fpe = np.zeros(t.shape)
+        for i in range(t.shape[0]):
+            col = ''
+            for j in t[i]:
+                col += str(int(j))
+            cipher = c.encrypt(col)
+            cipher = np.array(list(cipher), dtype=int)
+            fpe[i] = cipher
+        fpe = np.transpose(fpe)
+        # cutting into blocks (5x10)
+        h, w = fpe.shape
+        blocks = (fpe.reshape(h//5, 5, -1, 15)
+                .swapaxes(1,2)
+                .reshape(-1, 5, 15))
+        bloom_filter = np.zeros((blocks.shape[0], 2**5), dtype=int)
+        for i in range(blocks.shape[0]):
+            block = np.transpose(blocks[i])
+            for row in block:
+                row = [int(x) for x in row.tolist()]
+                row = ''.join(map(str, row))
+                dec = int(row, 2)
+                bloom_filter[i][dec] = 1
+        self.bloom = bloom_filter
+
     def generateBiohash(self):
-        pass
+        # Fature vector 
+        features = []
+        for i in range(25):
+            for j in range(90):
+                features.append(int(self.template[i][j]))
+        n = len(features)
+        m = 2000
+
+        # Blum Blum Shub
+        bbs = np.zeros((m,n))
+        val = int(self.hashkey)
+        for i in range(m):
+            for j in range(n):              
+                val = (val*val) % M
+                bit = val & 1
+                bbs[i][j] = bit
+        bbs = np.array(bbs)
+
+        # Gram-Schmidt
+        gs = np.zeros((m,n))
+        v1 = bbs[0]
+        u1 = v1/np.sqrt(sum(pow(elem,2) for elem in v1))
+        gs[0] = u1
+
+        y2 = bbs[1] - (u1.dot(bbs[1])*u1)
+        u2 = y2/np.sqrt(sum(pow(elem,2) for elem in y2))
+        gs[1] = u2
+
+        for i in range(2, m):
+            y = 0
+            for j in range(i):
+                y += gs[j].dot(bbs[i])*gs[j]
+            y = bbs[i] - y
+            u = y/np.sqrt(sum(pow(elem,2) for elem in y))
+            gs[i] = u
+
+        # Inner product
+        inner = []
+        for vector in gs:
+            inner.append(vector.dot(features))
+
+        # Generating BioHashing Code
+        avg = np.mean(inner)
+        b = []
+        for elem in inner:
+            if elem <= avg:
+                b.append(0)
+            else:
+                b.append(1)       
+        self.biohash = b
+
