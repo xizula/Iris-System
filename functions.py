@@ -4,7 +4,11 @@ import csv
 from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib
+import itertools
 
+font = {'size'   : 18}
+matplotlib.rc('font', **font)
 
 def delete_all():
     folder = Path("ubiris/Sessao_1")
@@ -18,10 +22,9 @@ def delete_all():
 def enroll(path):
     try:
         obj = Iris(path)
-        obj.getID()
         obj.generateTemplate()
-        # obj.getTweak()
-        # obj.generateBloom()
+        obj.getTweak()
+        obj.generateBloom()
         obj.getHashKey()
         obj.generateBiohash()
     except:
@@ -78,7 +81,7 @@ def verifyBiohash(temp1, temp2, threshold):
 def createCSV(threshold):
     with open('results.csv', 'w', newline='') as file:
         writer = csv.writer(file)
-        field = ["Probe 1", "Probe 2", "Passed?", "Should?", "Hamming"]
+        field = ["Sample 1", "Sample 2", "Passed?", "Should?", "Hamming"]
         writer.writerow(field)
         folder = Path("ubiris/Sessao_1")
         subfolders = [subfolder for subfolder in folder.iterdir() if subfolder.is_dir()]
@@ -166,7 +169,7 @@ def create_plots(load: bool, save: bool): # load -> True (from file), False (new
 def createCSV_bloom(threshold):
     with open('results_bloom.csv', 'w', newline='') as file:
         writer = csv.writer(file)
-        field = ["Probe 1", "Probe 2", "Passed?", "Should?", "Hamming"]
+        field = ["Sample 1", "Sample 2", "Passed?", "Should?", "Hamming"]
         writer.writerow(field)
         folder = Path("ubiris/Sessao_1")
         subfolders = [subfolder for subfolder in folder.iterdir() if subfolder.is_dir()]
@@ -243,7 +246,7 @@ def create_plots_bloom(load: bool, save: bool): # load -> True (from file), Fals
 def createCSV_biohash(threshold):
     with open('results_biohash.csv', 'w', newline='') as file:
         writer = csv.writer(file)
-        field = ["Probe 1", "Probe 2", "Passed?", "Should?", "Hamming"]
+        field = ["Sample 1", "Sample 2", "Passed?", "Should?", "Hamming"]
         writer.writerow(field)
         folder = Path("ubiris/Sessao_1")
         subfolders = [subfolder for subfolder in folder.iterdir() if subfolder.is_dir()]
@@ -324,24 +327,77 @@ def distribution(file):
     same = []
     diff = []
     for i in range(len(df)):
-        id1 = df['Probe 1'][i].index('/')
-        id2 = df['Probe 2'][i].index('/')
+        id1 = df['Sample 1'][i].index('/')
+        id2 = df['Sample 2'][i].index('/')
         if id1 != id2:
             diff.append(df['Hamming'][i])
         else:
-            if df['Probe 1'][i][1:(id1+1)] == df['Probe 2'][i][1:(id1+1)]:
+            if df['Sample 1'][i][1:(id1+1)] == df['Sample 2'][i][1:(id1+1)]:
                 same.append(df['Hamming'][i])
             else:
                 diff.append(df['Hamming'][i])
 
     plt.figure(figsize=[15,8])
-    plt.hist(diff, color='#C70039', bins=100, label="Different Probes")
-    plt.hist(same, color='green', bins=20, label ="Same probes")
+    plt.hist(diff, color='#C70039', bins=100, label="Different samples")
+    plt.hist(same, color='green', bins=20, label ="Same samples")
     plt.title("Similarity distribution")
     plt.xlabel("Hamming distance")
-    plt.ylabel("Amount of probes")
+    plt.ylabel("Amount of samples")
     plt.legend()
     plt.show()
 
-create_plots_biohash(True, False)
 
+def unlikability_bloom():
+    path = 'ubiris/Sessao_1/1/Img_1_1_1.jpg'
+    templates = []
+    hamming = []
+    obj = Iris(path)
+    obj.getID()
+    obj.generateTemplate()
+    for i in range(1000):
+        obj.tweak = str(secrets.token_hex(7))
+        obj.generateBloom()
+        templates.append(obj.bloom)
+        print(i)
+    
+    for a, b in itertools.combinations(templates, 2):
+        h, _ = verifyBloom(a, b, 0.3)
+        hamming.append(h)
+
+    plt.figure(figsize=[15,8])
+    plt.hist(hamming, color='#C70039', bins=100)
+    plt.title("Unlinkability")
+    plt.xlabel("Hamming distance")
+    plt.ylabel("Amount of samples")
+    plt.show()
+
+def unlikability_biohashing():
+    path = 'ubiris/Sessao_1/1/Img_1_1_1.jpg'
+    templates = []
+    hamming = []
+    obj = Iris(path)
+    obj.getID()
+    obj.generateTemplate()
+    for i in range(1000):
+        obj.hashkey = int(secrets.token_hex(16), 16)
+        obj.generateBiohash()
+        templates.append(obj.biohash)
+        print(i)
+    
+    for a, b in itertools.combinations(templates, 2):
+        h, _ = verifyBiohash(a, b, 0.3)
+        hamming.append(h)
+
+    plt.figure(figsize=[15,8])
+    plt.hist(hamming, color='#C70039', bins=100)
+    plt.title("Unlinkability")
+    plt.xlabel("Hamming distance")
+    plt.ylabel("Amount of samples")
+    plt.show()
+
+ir = Iris('ubiris/Sessao_1/1/Img_1_1_1.jpg')
+ir.getTweak()
+ir.generateTemplate()
+ir.generateBloom()
+print(ir.bloom.shape)
+print(ir.template.shape)   
