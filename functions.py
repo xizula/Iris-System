@@ -1,7 +1,7 @@
 from iris import *
 import os
 import csv
-from pathlib import Path
+# from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib
@@ -149,8 +149,8 @@ def create_plots(load: bool, save: bool): # load -> True (from file), False (new
     plt.figure(figsize=[15,8])
     plt.plot(thres, fars, color='red', label ='FAR')
     plt.plot(thres, frrs, color='blue', label = 'FRR')
-    plt.xscale('log')
-    plt.yscale('log')
+    # plt.xscale('log')
+    # plt.yscale('log')
     plt.xlabel("Threshold")
     plt.ylabel("Error value")
     plt.title("FAR and FRR")
@@ -158,8 +158,8 @@ def create_plots(load: bool, save: bool): # load -> True (from file), False (new
     plt.show()
     plt.figure(figsize=[15,8])
     plt.plot(frrs, fars, color='green')
-    plt.xscale('log')
-    plt.yscale('log')
+    # plt.xscale('log')
+    # plt.yscale('log')
     plt.xlabel("FRR")
     plt.ylabel("FAR")
     plt.title("FAR(FRR)")
@@ -226,8 +226,8 @@ def create_plots_bloom(load: bool, save: bool): # load -> True (from file), Fals
     plt.figure(figsize=[15,8])
     plt.plot(thres, fars, color='red', label ='FAR')
     plt.plot(thres, frrs, color='blue', label = 'FRR')
-    plt.xscale('log')
-    plt.yscale('log')
+    # plt.xscale('log')
+    # plt.yscale('log')
     plt.xlabel("Threshold")
     plt.ylabel("Error value")
     plt.title("FAR and FRR (Bloom)")
@@ -235,8 +235,8 @@ def create_plots_bloom(load: bool, save: bool): # load -> True (from file), Fals
     plt.show()
     plt.figure(figsize=[15,8])
     plt.plot(frrs, fars, color='green')
-    plt.xscale('log')
-    plt.yscale('log')
+    # plt.xscale('log')
+    # plt.yscale('log')
     plt.xlabel("FRR")
     plt.ylabel("FAR")
     plt.title("FAR(FRR) (Bloom)")
@@ -305,8 +305,8 @@ def create_plots_biohash(load: bool, save: bool): # load -> True (from file), Fa
     plt.figure(figsize=[15,8])
     plt.plot(thres, fars, color='red', label ='FAR')
     plt.plot(thres, frrs, color='blue', label = 'FRR')
-    plt.xscale('log')
-    plt.yscale('log')
+    # plt.xscale('log')
+    # plt.yscale('log')
     plt.xlabel("Threshold")
     plt.ylabel("Error value")
     plt.title("FAR and FRR")
@@ -314,8 +314,8 @@ def create_plots_biohash(load: bool, save: bool): # load -> True (from file), Fa
     plt.show()
     plt.figure(figsize=[15,8])
     plt.plot(frrs, fars, color='green')
-    plt.xscale('log')
-    plt.yscale('log')
+    # plt.xscale('log')
+    # plt.yscale('log')
     plt.xlabel("FRR")
     plt.ylabel("FAR")
     plt.title("FAR(FRR)")
@@ -395,9 +395,3 @@ def unlikability_biohashing():
     plt.ylabel("Amount of samples")
     plt.show()
 
-ir = Iris('ubiris/Sessao_1/1/Img_1_1_1.jpg')
-ir.getTweak()
-ir.generateTemplate()
-ir.generateBloom()
-print(ir.bloom.shape)
-print(ir.template.shape)   

@@ -8,8 +8,8 @@ from ff3 import FF3Cipher
 import secrets
 import pandas as pd
 import csv
+from pathlib import Path
  
-part_path = 'ubiris/Sessao_1/'
 key = "b09b18e4a298c513ad6236def0f6df7d" # secrets.token_hex(16)
 p = 205891132094743
 q = 1152921504606847067
@@ -19,15 +19,7 @@ class Iris:
     def __init__(self, path):
         self.path = path
         self.probeID = self.path[-5]
-        self.id = self.getID() 
-    
-    def getID(self):
-        if self.path[18] == "/":
-            return self.path[16] + self.path[17]
-        elif self.path[19] == "/":
-            return self.path[16] + self.path[17] + self.path[18]
-        else:
-            return self.path[16]
+        self.id = Path(self.path).parent.name 
     
     def getTweak(self):
         tweaks = pd.read_csv('tweaks.csv')
@@ -192,7 +184,7 @@ class Iris:
             self.fail = 'yes'
 
     def save(self):
-        self.filename = part_path  + str(self.id) + "/" + str(self.probeID) + ".pkl"
+        self.filename = 'ubiris/Sessao_1/'  + str(self.id) + "/" + str(self.probeID) + ".pkl"
         file = open(self.filename, 'wb')
         pickle.dump(self, file)
         file.close()
