@@ -1,10 +1,14 @@
 from iris import *
 import os
 import csv
-from pathlib import Path
+# from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib
+import itertools
 
+font = {'size'   : 18}
+matplotlib.rc('font', **font)
 
 def delete_all():
     folder = Path("ubiris/Sessao_1")
@@ -18,10 +22,9 @@ def delete_all():
 def enroll(path):
     try:
         obj = Iris(path)
-        obj.getID()
         obj.generateTemplate()
-        # obj.getTweak()
-        # obj.generateBloom()
+        obj.getTweak()
+        obj.generateBloom()
         obj.getHashKey()
         obj.generateBiohash()
     except:
@@ -78,7 +81,7 @@ def verifyBiohash(temp1, temp2, threshold):
 def createCSV(threshold):
     with open('results.csv', 'w', newline='') as file:
         writer = csv.writer(file)
-        field = ["Probe 1", "Probe 2", "Passed?", "Should?", "Hamming"]
+        field = ["Sample 1", "Sample 2", "Passed?", "Should?", "Hamming"]
         writer.writerow(field)
         folder = Path("ubiris/Sessao_1")
         subfolders = [subfolder for subfolder in folder.iterdir() if subfolder.is_dir()]
@@ -146,14 +149,17 @@ def create_plots(load: bool, save: bool): # load -> True (from file), False (new
     plt.figure(figsize=[15,8])
     plt.plot(thres, fars, color='red', label ='FAR')
     plt.plot(thres, frrs, color='blue', label = 'FRR')
-    plt.xlabel("Threshold")
-    plt.ylabel("Error value")
-    plt.title("FAR and FRR")
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel("Próg akceptacji")
+    plt.ylabel("Wartość błędu")
+    plt.title("FAR oraz FRR")
     plt.legend()
     plt.show()
     plt.figure(figsize=[15,8])
     plt.plot(frrs, fars, color='green')
-    # plt.xscale('log')
+    plt.xscale('log')
+    plt.yscale('log')
     plt.xlabel("FRR")
     plt.ylabel("FAR")
     plt.title("FAR(FRR)")
@@ -163,7 +169,7 @@ def create_plots(load: bool, save: bool): # load -> True (from file), False (new
 def createCSV_bloom(threshold):
     with open('results_bloom.csv', 'w', newline='') as file:
         writer = csv.writer(file)
-        field = ["Probe 1", "Probe 2", "Passed?", "Should?", "Hamming"]
+        field = ["Sample 1", "Sample 2", "Passed?", "Should?", "Hamming"]
         writer.writerow(field)
         folder = Path("ubiris/Sessao_1")
         subfolders = [subfolder for subfolder in folder.iterdir() if subfolder.is_dir()]
@@ -220,24 +226,27 @@ def create_plots_bloom(load: bool, save: bool): # load -> True (from file), Fals
     plt.figure(figsize=[15,8])
     plt.plot(thres, fars, color='red', label ='FAR')
     plt.plot(thres, frrs, color='blue', label = 'FRR')
-    plt.xlabel("Threshold")
-    plt.ylabel("Error value")
-    plt.title("FAR and FRR (Bloom)")
+    # plt.xscale('log')
+    # plt.yscale('log')
+    plt.xlabel("Próg akceptacji")
+    plt.ylabel("Wartość błędu")
+    plt.title("FAR oraz FRR (Bloom Filters)")
     plt.legend()
     plt.show()
     plt.figure(figsize=[15,8])
     plt.plot(frrs, fars, color='green')
     # plt.xscale('log')
+    # plt.yscale('log')
     plt.xlabel("FRR")
     plt.ylabel("FAR")
-    plt.title("FAR(FRR) (Bloom)")
+    plt.title("FAR(FRR) (Bloom Filters)")
     plt.show()
 
 
 def createCSV_biohash(threshold):
     with open('results_biohash.csv', 'w', newline='') as file:
         writer = csv.writer(file)
-        field = ["Probe 1", "Probe 2", "Passed?", "Should?", "Hamming"]
+        field = ["Sample 1", "Sample 2", "Passed?", "Should?", "Hamming"]
         writer.writerow(field)
         folder = Path("ubiris/Sessao_1")
         subfolders = [subfolder for subfolder in folder.iterdir() if subfolder.is_dir()]
@@ -296,21 +305,101 @@ def create_plots_biohash(load: bool, save: bool): # load -> True (from file), Fa
     plt.figure(figsize=[15,8])
     plt.plot(thres, fars, color='red', label ='FAR')
     plt.plot(thres, frrs, color='blue', label = 'FRR')
-    plt.xlabel("Threshold")
-    plt.ylabel("Error value")
-    plt.title("FAR and FRR")
+    # plt.xscale('log')
+    # plt.yscale('log')
+    plt.xlabel("Próg akceptacji")
+    plt.ylabel("Wartość błędu")
+    plt.title("FAR oraz FRR (Biohashing)")
     plt.legend()
     plt.show()
     plt.figure(figsize=[15,8])
     plt.plot(frrs, fars, color='green')
     # plt.xscale('log')
+    # plt.yscale('log')
     plt.xlabel("FRR")
     plt.ylabel("FAR")
-    plt.title("FAR(FRR)")
+    plt.title("FAR(FRR) (Biohashing)")
     plt.show()
 
 
-# delete_all()
+def distribution(file):
+    df = pd.read_csv(file)
+    same = []
+    diff = []
+    for i in range(len(df)):
+        id1 = df['Sample 1'][i].index('/')
+        id2 = df['Sample 2'][i].index('/')
+        if id1 != id2:
+            diff.append(df['Hamming'][i])
+        else:
+            if df['Sample 1'][i][1:(id1+1)] == df['Sample 2'][i][1:(id1+1)]:
+                same.append(df['Hamming'][i])
+            else:
+                diff.append(df['Hamming'][i])
+
+    plt.figure(figsize=[15,8])
+    plt.hist(diff, color='#C70039', bins=100, label="Próbki różnych osób")
+    plt.hist(same, color='green', bins=20, label ="Próbki jednakowych osób")
+    plt.title("Rozkład podobieństwa")
+    plt.xlabel("Dystans Hamminga")
+    plt.ylabel("Liczba próbek")
+    plt.legend()
+    plt.show()
+    return same, diff
+
+
+def unlikability_bloom(path):
+    templates = []
+    hamming = []
+    obj = Iris(path)
+    obj.generateTemplate()
+    for i in range(1000):
+        obj.tweak = str(secrets.token_hex(7))
+        obj.generateBloom()
+        templates.append(obj.bloom)
+        print(i)
+    
+    for a, b in itertools.combinations(templates, 2):
+        h, _ = verifyBloom(a, b, 0.3)
+        hamming.append(h)
+    
+    _,diff = distribution('results_bloom.csv')
+    plt.figure(figsize=[15,8])
+    plt.hist(hamming, color='green', bins=100, label ='Różne tożsamośći użytkownika')
+    plt.hist(diff, color='#C70039', bins=100, label="Różni użytkownicy")
+    plt.title("Nielinkowalność (Bloom Filetrs)")
+    plt.xlabel("Dystans Hamminga")
+    plt.ylabel("Liczba próbek")
+    plt.legend()
+    plt.show()
+
+def unlikability_biohashing(path):
+    templates = []
+    hamming = []
+    obj = Iris(path)
+    obj.generateTemplate()
+    for i in range(1000):
+        obj.hashkey = int(secrets.token_hex(16), 16)
+        obj.generateBiohash()
+        templates.append(obj.biohash)
+        print(i)
+    
+    for a, b in itertools.combinations(templates, 2):
+        h, _ = verifyBiohash(a, b, 0.3)
+        hamming.append(h)
+        
+    _,diff = distribution('results_biohash.csv')
+    plt.figure(figsize=[15,8])
+    plt.hist(hamming, color='green', bins=100, label ='Różne tożsamośći użytkownika')
+    plt.hist(diff, color='#C70039', bins=100, label="Różni użytkownicy")
+    plt.title("Nielinkowalność (Biohashing)")
+    plt.xlabel("Dystans Hamminga")
+    plt.ylabel("Liczba próbek")
+    plt.legend()
+    plt.show()
+
 # enroll_all()
-# enroll("ubiris/Sessao_1/1/Img_1_1_1.jpg") 
-create_plots_biohash(False, True)
+# create_plots_biohash(True, False)
+# distribution('results_biohash.csv')
+unlikability_biohashing('ubiris/Sessao_1/1/Img_1_1_1.jpg')
+

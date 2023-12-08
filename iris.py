@@ -6,13 +6,10 @@ from scipy.linalg import svd
 import pickle
 from ff3 import FF3Cipher
 import secrets
-from passlib.utils.pbkdf2 import pbkdf2
 import pandas as pd
 import csv
-import sympy
+from pathlib import Path
  
-part_path = 'ubiris/Sessao_1/'
-fte = 0 
 key = "b09b18e4a298c513ad6236def0f6df7d" # secrets.token_hex(16)
 p = 205891132094743
 q = 1152921504606847067
@@ -21,15 +18,8 @@ M = p * q
 class Iris:
     def __init__(self, path):
         self.path = path
-        self.probeID = self.path[-5] 
-    
-    def getID(self):
-        if self.path[18] == "/":
-            self.id = self.path[16] + self.path[17]
-        elif self.path[19] == "/":
-            self.id = self.path[16] + self.path[17] + self.path[18]
-        else:
-            self.id = self.path[16]
+        self.probeID = self.path[-5]
+        self.id = Path(self.path).parent.name 
     
     def getTweak(self):
         tweaks = pd.read_csv('tweaks.csv')
@@ -81,9 +71,6 @@ class Iris:
                         center2 = (i[0], i[1])
                         radius2 = i[2]
             cv2.circle(img1, center2, radius2, (255, 0, 255), 1)
-            # title = str(self.id) + "/" + str(self.probeID)
-            # cv2.imshow(title, img1)
-            # cv2.waitKey(0)
             
             #************ Normalization **************#
             angle = np.arange(0, 2*np.pi, 2*np.pi/360) 
@@ -191,18 +178,13 @@ class Iris:
                     else:
                         binary[i][j] = 0
             self.template = binary
-
-
             self.fail = 'no'
         except:
             print("Fail to enroll")
             self.fail = 'yes'
-            global fte
-            fte += 1
-            print(fte)
 
     def save(self):
-        self.filename = part_path  + str(self.id) + "/" + str(self.probeID) + ".pkl"
+        self.filename = 'ubiris/Sessao_1/'  + str(self.id) + "/" + str(self.probeID) + ".pkl"
         file = open(self.filename, 'wb')
         pickle.dump(self, file)
         file.close()
@@ -234,7 +216,7 @@ class Iris:
             cipher = np.array(list(cipher), dtype=int)
             fpe[i] = cipher
         fpe = np.transpose(fpe)
-        # cutting into blocks (5x10)
+        # cutting into blocks (5x15)
         h, w = fpe.shape
         blocks = (fpe.reshape(h//5, 5, -1, 15)
                 .swapaxes(1,2)
@@ -257,7 +239,6 @@ class Iris:
                 features.append(int(self.template[i][j]))
         n = len(features)
         m = 2000
-
         # Blum Blum Shub
         bbs = np.zeros((m,n))
         val = int(self.hashkey)
@@ -267,7 +248,6 @@ class Iris:
                 bit = val & 1
                 bbs[i][j] = bit
         bbs = np.array(bbs)
-
         # Gram-Schmidt
         gs = np.zeros((m,n))
         v1 = bbs[0]
@@ -285,12 +265,10 @@ class Iris:
             y = bbs[i] - y
             u = y/np.sqrt(sum(pow(elem,2) for elem in y))
             gs[i] = u
-
         # Inner product
         inner = []
         for vector in gs:
             inner.append(vector.dot(features))
-
         # Generating BioHashing Code
         avg = np.mean(inner)
         b = []
@@ -298,6 +276,7 @@ class Iris:
             if elem <= avg:
                 b.append(0)
             else:
-                b.append(1)       
+                b.append(1)     
         self.biohash = b
+
 
