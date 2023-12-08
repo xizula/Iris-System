@@ -149,17 +149,17 @@ def create_plots(load: bool, save: bool): # load -> True (from file), False (new
     plt.figure(figsize=[15,8])
     plt.plot(thres, fars, color='red', label ='FAR')
     plt.plot(thres, frrs, color='blue', label = 'FRR')
-    # plt.xscale('log')
-    # plt.yscale('log')
-    plt.xlabel("Threshold")
-    plt.ylabel("Error value")
-    plt.title("FAR and FRR")
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel("Próg akceptacji")
+    plt.ylabel("Wartość błędu")
+    plt.title("FAR oraz FRR")
     plt.legend()
     plt.show()
     plt.figure(figsize=[15,8])
     plt.plot(frrs, fars, color='green')
-    # plt.xscale('log')
-    # plt.yscale('log')
+    plt.xscale('log')
+    plt.yscale('log')
     plt.xlabel("FRR")
     plt.ylabel("FAR")
     plt.title("FAR(FRR)")
@@ -228,9 +228,9 @@ def create_plots_bloom(load: bool, save: bool): # load -> True (from file), Fals
     plt.plot(thres, frrs, color='blue', label = 'FRR')
     # plt.xscale('log')
     # plt.yscale('log')
-    plt.xlabel("Threshold")
-    plt.ylabel("Error value")
-    plt.title("FAR and FRR (Bloom)")
+    plt.xlabel("Próg akceptacji")
+    plt.ylabel("Wartość błędu")
+    plt.title("FAR oraz FRR (Bloom Filters)")
     plt.legend()
     plt.show()
     plt.figure(figsize=[15,8])
@@ -239,7 +239,7 @@ def create_plots_bloom(load: bool, save: bool): # load -> True (from file), Fals
     # plt.yscale('log')
     plt.xlabel("FRR")
     plt.ylabel("FAR")
-    plt.title("FAR(FRR) (Bloom)")
+    plt.title("FAR(FRR) (Bloom Filters)")
     plt.show()
 
 
@@ -307,9 +307,9 @@ def create_plots_biohash(load: bool, save: bool): # load -> True (from file), Fa
     plt.plot(thres, frrs, color='blue', label = 'FRR')
     # plt.xscale('log')
     # plt.yscale('log')
-    plt.xlabel("Threshold")
-    plt.ylabel("Error value")
-    plt.title("FAR and FRR")
+    plt.xlabel("Próg akceptacji")
+    plt.ylabel("Wartość błędu")
+    plt.title("FAR oraz FRR (Biohashing)")
     plt.legend()
     plt.show()
     plt.figure(figsize=[15,8])
@@ -318,7 +318,7 @@ def create_plots_biohash(load: bool, save: bool): # load -> True (from file), Fa
     # plt.yscale('log')
     plt.xlabel("FRR")
     plt.ylabel("FAR")
-    plt.title("FAR(FRR)")
+    plt.title("FAR(FRR) (Biohashing)")
     plt.show()
 
 
@@ -338,21 +338,20 @@ def distribution(file):
                 diff.append(df['Hamming'][i])
 
     plt.figure(figsize=[15,8])
-    plt.hist(diff, color='#C70039', bins=100, label="Different samples")
-    plt.hist(same, color='green', bins=20, label ="Same samples")
-    plt.title("Similarity distribution")
-    plt.xlabel("Hamming distance")
-    plt.ylabel("Amount of samples")
+    plt.hist(diff, color='#C70039', bins=100, label="Próbki różnych osób")
+    plt.hist(same, color='green', bins=20, label ="Próbki jednakowych osób")
+    plt.title("Rozkład podobieństwa")
+    plt.xlabel("Dystans Hamminga")
+    plt.ylabel("Liczba próbek")
     plt.legend()
     plt.show()
+    return same, diff
 
 
-def unlikability_bloom():
-    path = 'ubiris/Sessao_1/1/Img_1_1_1.jpg'
+def unlikability_bloom(path):
     templates = []
     hamming = []
     obj = Iris(path)
-    obj.getID()
     obj.generateTemplate()
     for i in range(1000):
         obj.tweak = str(secrets.token_hex(7))
@@ -363,20 +362,21 @@ def unlikability_bloom():
     for a, b in itertools.combinations(templates, 2):
         h, _ = verifyBloom(a, b, 0.3)
         hamming.append(h)
-
+    
+    _,diff = distribution('results_bloom.csv')
     plt.figure(figsize=[15,8])
-    plt.hist(hamming, color='#C70039', bins=100)
-    plt.title("Unlinkability")
-    plt.xlabel("Hamming distance")
-    plt.ylabel("Amount of samples")
+    plt.hist(hamming, color='green', bins=100, label ='Różne tożsamośći użytkownika')
+    plt.hist(diff, color='#C70039', bins=100, label="Różni użytkownicy")
+    plt.title("Nielinkowalność (Bloom Filetrs)")
+    plt.xlabel("Dystans Hamminga")
+    plt.ylabel("Liczba próbek")
+    plt.legend()
     plt.show()
 
-def unlikability_biohashing():
-    path = 'ubiris/Sessao_1/1/Img_1_1_1.jpg'
+def unlikability_biohashing(path):
     templates = []
     hamming = []
     obj = Iris(path)
-    obj.getID()
     obj.generateTemplate()
     for i in range(1000):
         obj.hashkey = int(secrets.token_hex(16), 16)
@@ -387,11 +387,19 @@ def unlikability_biohashing():
     for a, b in itertools.combinations(templates, 2):
         h, _ = verifyBiohash(a, b, 0.3)
         hamming.append(h)
-
+        
+    _,diff = distribution('results_biohash.csv')
     plt.figure(figsize=[15,8])
-    plt.hist(hamming, color='#C70039', bins=100)
-    plt.title("Unlinkability")
-    plt.xlabel("Hamming distance")
-    plt.ylabel("Amount of samples")
+    plt.hist(hamming, color='green', bins=100, label ='Różne tożsamośći użytkownika')
+    plt.hist(diff, color='#C70039', bins=100, label="Różni użytkownicy")
+    plt.title("Nielinkowalność (Biohashing)")
+    plt.xlabel("Dystans Hamminga")
+    plt.ylabel("Liczba próbek")
+    plt.legend()
     plt.show()
+
+# enroll_all()
+# create_plots_biohash(True, False)
+# distribution('results_biohash.csv')
+unlikability_biohashing('ubiris/Sessao_1/1/Img_1_1_1.jpg')
 
